@@ -135,6 +135,7 @@ app.get("*", (_, res) => {
 
 // Define a middleware function to log errors
 const logErrors = (err, req, res, next) => {
+  if (res.headersSent) next();
   // Log the error to the console for debugging purposes
   console.error(err);
   console.error("on req:", req.method, req.path);
