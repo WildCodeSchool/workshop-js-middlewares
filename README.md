@@ -174,8 +174,7 @@ Then implement this middleware on the post `/albums` route before the validation
 
 Now test changing the value of the isAdmin property from false to true, you should now have a status 201 returned by your api
 
-
-## Bonus mission
+## Bonus mission
 
 To simplify and strengthen validation, modify your validation middleware to use a library like joi.
 
