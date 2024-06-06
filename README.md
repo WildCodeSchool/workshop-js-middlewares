@@ -128,7 +128,7 @@ Expected Response:
 
 In Express.js, middleware functions are pieces of code that execute during the lifecycle of a request to the server. They have access to the request object (req), the response object (res), and the next middleware function in the application’s request-response cycle. Middleware functions can perform a variety of tasks, such as executing code, modifying the request and response objects, ending the request-response cycle, and calling the next middleware function.
 
-#### How Data Transfer Works Between Middlewares
+**How Data Transfer Works Between Middlewares**
 
 Middleware functions are executed sequentially, in the order they are defined in the application. The primary way data is transferred between middleware functions is through the req and res objects.
 
