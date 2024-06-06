@@ -173,3 +173,10 @@ Now it's your turn, add in the `albums` file previously created in the `service`
 Then implement this middleware on the post `/albums` route before the validation middleware done above then modify the validation middleware so that it returns a 403 status in response in the case where the isAdmin property defined in the request object is false
 
 Now test changing the value of the isAdmin property from false to true, you should now have a status 201 returned by your api
+
+
+## Bonus mission
+
+To simplify and strengthen validation, modify your validation middleware to use a library like joi.
+
+[joi get started](https://www.digitalocean.com/community/tutorials/how-to-use-joi-for-node-api-schema-validation#step-2-experimenting-with-joi-validation-rules)
