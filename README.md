@@ -1,87 +1,175 @@
-# apirefacto
+# How to implements middlewares in Harmonia
 
-This project uses Harmonia. Harmonia is a framework meant to serve as a foundation for every project following the React-Express-MySQL stack, as learned in Wild Code School.
-It's pre-configured with a set of tools which'll help students produce industry-quality and easier-to-maintain code, while staying a pedagogical tool.
+The objective of this workshop is to practice the implementation of middleware otherwise called service within harmonia to validate data and exchange information between your different middlewares
 
-## Setup & Use
+## Getting started
 
-**Windows users:** be sure to run these commands in a git terminal to avoid [issues with newline formats](https://en.wikipedia.org/wiki/Newline#Issues_with_different_newline_formats):
+- Git clone this [project](https://github.com/WildCodeSchool/workshop-js-middlewares)
+- Run `npm install`
+- Setup your .env file in the `server` folder
+- Run `npm run db:migrate`
+- Run `npm run dev:server`
+
+## Project architecture
+
+Diagram allowing you to visualize the architecture of the server folder, certain parts have been deliberately omitted in this diagram to concentrate on the essentials
+
+The part that interests us here is found in the `app/service` folder, this is where we will declare all our middleware
+
+```sh
+server
+├── database
+│   ├── fixtures
+│   │   └──  // ✅
+│   ├── models
+│   │   └──  // ✅
+│   ├── client.js
+│   ├── schema.sql // ✅
+│   └── tables.js  // ✅
+├── app
+│   ├── routers
+│   │   └──  // ✅
+│   ├── controllers
+│   │   └──  // ✅
+│   ├── services # folder who contain others middlewares services (data validator, email service, etc..)
+│   │   └──  // MAINTENANT
+│   └── config.js
+├── tests
+│   └──  // bientôt
+├── .env.sample
+├── .gitignore
+├── index.js // ✅
+├── package-lock.json
+└── package.json
+```
+
+## Your mission
+
+### Data validation middlewares
+
+You should implement a data validation middleware for an album table which contains at least the following information: title, genre, picture, artist
+To validate these fields, you must respect at least the following rules: the title must be at least 3 characters long, the genre must be one of the 3 genres mentioned (Rap, Rock, Electro) the case being important.
+
+- To do this, start by creating a new `albums.js` file in the `app/services` folder.
+- In your middleware validate the data using the rules above
+- In case of error send a 400 status code with a message explaining the error
+- In case of no error call the next method to pass the rest to the controller
+- Apply your middleware to the POST route `/albums` just before your controller
+
+**Validation middleware example :**
+
+```js
+// Validation middleware
+const validateData = (req, res, next) => {
+  const { name, age } = req.body;
+
+  if (!name || typeof name !== 'string') {
+    return res.status(400).json({ error: 'Name must be a string with at least 3 characters.' });
+  }
+
+  if (!age || typeof age !== 'number' || age < 18) {
+    return res.status(400).json({ error: 'Age must be a number and at least 18.' });
+  }
+
+  next();
+};
+```
+
+**Valid Request Example:**
+
+- URL: http://localhost:3000/albums
+- Method: POST
+- Body (JSON):
+
+```json
+{
+  "title": "Revolutionary",
+  "genre": "Rock",
+  "picture": "http://example.com/pic.jpg",
+  "artist": "The Rockers"
+}
+```
+
+Expected Response:
+
+```json
+{
+  "title": "Revolutionary",
+  "genre": "Rock",
+  "picture": "http://example.com/pic.jpg",
+  "artist": "The Rockers"
+}
+```
+
+**Invalid Request Example (Title too short):**
+
+- URL: http://localhost:3000/albums
+- Method: POST
+- Body (JSON):
+
+```json
+{
+  "title": "Hi",
+  "genre": "Rock",
+  "picture": "http://example.com/pic.jpg",
+  "artist": "The Rockers"
+}
+```
+
+Expected Response:
+
+```json
+{
+  "error": "Title must be at least 3 characters long."
+}
+```
+
+### Data transfert betweens middlewares
+
+In Express.js, middleware functions are pieces of code that execute during the lifecycle of a request to the server. They have access to the request object (req), the response object (res), and the next middleware function in the application’s request-response cycle. Middleware functions can perform a variety of tasks, such as executing code, modifying the request and response objects, ending the request-response cycle, and calling the next middleware function.
+
+#### How Data Transfer Works Between Middlewares
+
+Middleware functions are executed sequentially, in the order they are defined in the application. The primary way data is transferred between middleware functions is through the req and res objects.
+
+**Example of Middleware Data Transfer :**
+
+```js
+
+// Validation middleware
+const validateData = (req, res, next) => {
+  const { name, age } = req.body;
+
+  if (!name || typeof name !== 'string' || name.length < 3) {
+    return res.status(400).json({ error: 'Name must be a string with at least 3 characters.' });
+  }
+
+  if (!age || typeof age !== 'number' || age < 18) {
+    return res.status(400).json({ error: 'Age must be a number and at least 18.' });
+  }
+
+  next();
+};
+
+// Transformation middleware
+const transformData = (req, res, next) => {
+  req.body.name = req.body.name.trim();
+  req.isAdmin = true // we can also pass new data directly in the request object !
+  next();
+};
+
+// Controller middlewares
+const createUser = async (req, res, next) => {
+  // call the model to insert data in the db & send response to the client
+}
+
+// Route with middleware
+app.post('/user', validateData, transformData, createUser);
 
 ```
-git config --global core.eol lf
-git config --global core.autocrlf false
-```
 
-- In VSCode, install plugins **Prettier - Code formatter** and **ESLint** and configure them
-- Clone this repo, enter it
-- Run command `npm install`
-- Create environment files (`.env`) in both `server` and `client`: you can copy `.env.sample` files as starters (**don't** delete them)
+Now it's your turn, add in the `albums` file previously created in the `service` folder a middleware function which must add to the `req` object an `isAdmin` property set to false and move on to the next middleware using the `next` method
 
-### Available Commands
+Then implement this middleware on the post `/albums` route before the validation middleware done above then modify the validation middleware so that it returns a 403 status in response in the case where the isAdmin property defined in the request object is false
 
-- `db:migrate` : Run the database migration script
-- `db:seed` : Run the database seed script
-- `dev` : Starts both servers (client + server) in one terminal
-- `dev:client` : Starts the React client
-- `dev:back` : Starts the Express server
-- `lint` : Runs validation tools (will be executed on every _commit_, and refuse unclean code)
-
-## FAQ
-
-### Tools
-
-- _Concurrently_ : Allows for several commands to run concurrently in the same CLI
-- _Husky_ : Allows to execute specific commands that trigger on _git_ events
-- _Vite_ : Alternative to _Create-React-App_, packaging less tools for a more fluid experience
-- _ESLint_ : "Quality of code" tool, ensures chosen rules will be enforced
-- _Prettier_ : "Quality of code" tool as well, focuses on the styleguide
-- _ Airbnb Standard_ : One of the most known "standards", even though it's not officially linked to ES/JS
-
-## Deployment with Traefik
-
-> ⚠️ Prerequisites : You must have installed and configured Traefik on your VPS beforehand.
-> https://github.com/WildCodeSchool/vps-traefik-starter-kit/
-
-For deployment, you have to go to `secrets` → app `actions` on the github repo to insert via `New repository secret` :
-
-- SSH_HOST : IP address of your VPS
-- SSH_USER : SSH login to your VPS
-- SSH_PASSWORD : SSH connection password to your VPS
-
-And a public variable from the tab `/settings/variables/actions` :
-
-- PROJECT_NAME : the name of the project used to create the subdomain.
-
-> ⚠️ Warning : underscores are not allowed. They can cause trouble with the let's encrypt certificate
-
-Use this same tab to add the other environment variables required for the project if any.
-
-Only the server will be accessible. The root path `"/"` will redirect to the dist folder of your client. In order to allow that, please uncomment the line as explained in `server/src/app.js` (Line 102).
-Because the server will also serve the client, the global variable VITE_SERVER_URL will be set with an empty string.
-
-Your url will be ` https://${PROJECT-NAME}.${subdomain}.wilders.dev/`.
-
-### About the database
-
-The database is automaticaly deployed with the name of your repo. During the build of the projet (`docker-entry.sh`), the `node migrate.js` command is executed in the server. If you want to seed automaticaly your database using the `seed.js` script, replace the `cd ./server && node ./bin/migrate.js && node index.js` by `cd ./server && node ./bin/migrate.js && node ./bin/seed.js && node index.js`
-
-### About public assets (pictures, fonts...)
-
-Don't use any public folder on your client. This folder won't be accessible online. You may move your public assets in the `server/public` folder. Prefer [static assets](https://vitejs.dev/guide/assets) when possible.
-
-### About Specific Environment Variables (e.g., Email)
-
-Students should use the template provided in the `*.env.sample*` file as `<PROJECT_NAME><SPECIFIC_NAME>=<THE_VARIABLE>`.
-
-> ⚠️ **Warning:** The `PROJECT_NAME` should match the one used in the Git public variable.
-
-To add it during deployment, follow these 2 steps:
-
-- Add the following variable to the `docker-compose.prod.yml` file (as shown in the example: `PROJECT_NAME_SPECIFIC_NAME: ${PROJECT_NAME_SPECIFIC_NAME}`).
-- Connect to your server via SSH. Open the global `.env` file in Traefik (`nano ./traefik/data/.env`). Add the variable with the correct value and save the file.
-- Afterward, you can initiate automatic deployment. Docker will not refresh during this process.
-
-### About Logs
-
-If you want to access the logs of your online projet (to follow the deployement or to watch any bug error), connect to your VPS (`ssh user@host`).
-Then, go on your specific project and run  `docker compose logs -t -f`.
+Now test changing the value of the isAdmin property from false to true, you should now have a status 201 returned by your api
