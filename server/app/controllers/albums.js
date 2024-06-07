@@ -22,7 +22,7 @@ const read = async (req, res, next) => {
 const add = async (req, res, next) => {
   const albumData = req.body;
   try {
-    const [{insertId}] = await tables.albums.create(albumData);
+    const [{ insertId }] = await tables.albums.create(albumData);
     const [[album]] = await tables.albums.read(insertId);
     res.status(201).json(album);
   } catch (err) {

@@ -7,7 +7,15 @@ const router = express.Router();
 /* ************************************************************************* */
 
 // Import item-related actions
-const { browse, read, add, edit, destroy } = require("../../../controllers/albums");
+const {
+  browse,
+  read,
+  add,
+  edit,
+  destroy,
+} = require("../../../controllers/albums");
+
+const { setStatusAdmin, checkStatusAdmin, validateData } = require("../../../services/album");
 
 // Route to get a list of items
 router.get("/", browse);
@@ -16,7 +24,7 @@ router.get("/", browse);
 router.get("/:id", read);
 
 // Route to add a new item
-router.post("/", add);
+router.post("/", setStatusAdmin, checkStatusAdmin, validateData, add);
 
 router.put("/:id", edit);
 
